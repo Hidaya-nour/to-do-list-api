@@ -1,12 +1,48 @@
 [
   {
-    "id": "e2f17808-2a07-4cca-9341-3679a804c005",
-    "title": "Learn Express",
-    "completed": false
+    "id": 2,
+    "title": "Build Express server",
+    "description": "",
+    "completed": true,
+    "priority": "medium",
+    "dueDate": "2026-10-29",
+    "remindAt": null,
+    "repeat": "none",
+    "subtasks": [],
+    "reminderSent": false,
+    "createdAt": "2026-10-28T09:00:00.000Z",
+    "updatedAt": "2026-10-29T12:00:00.000Z",
+    "completedAt": "2026-10-29T12:00:00.000Z",
+    "deletedAt": null
   },
   {
-    "id": "3ab5b687-2a8b-4954-b523-46afc3417343",
+    "id": 3,
+    "title": "Write the weekly review",
+    "description": "Check stats and clear completed tasks",
+    "completed": false,
+    "priority": "low",
+    "dueDate": "2026-11-03",
+    "remindAt": "2026-11-03T07:00:00.000Z",
+    "repeat": "weekly",
+    "subtasks": [],
+    "reminderSent": false,
+    "createdAt": "2026-10-28T09:30:00.000Z",
+    "updatedAt": "2026-10-28T09:30:00.000Z",
+    "completedAt": null,
+    "deletedAt": null
+  },
+  {
+    "id": "b217f029-acc0-4abc-b48a-55ee35c9df2a",
     "title": "Learn Express",
+    "description": " ",
+    "priority": "medium",
+    "dueDate": null,
+    "remindAt": null,
+    "repeat": "none",
+    "subtasks": [],
+    "reminderSent": false,
+    "completedAt": null,
+    "deletedAt": null,
     "completed": false
   }
 ]

@@ -7,9 +7,8 @@ export const getAllTasks = async () => {
     const data = await readFile(
         filePath, 'utf-8'
     );
-    console.log(data);
-    // data.filter(tasks, () => task.deletedAt == null)
-    return JSON.parse(data);
+    const tasks = JSON.parse(data);
+    return tasks.filter(task => task.deletedAt === null);
 };
 
 export const getTasksById = async (id) => {
