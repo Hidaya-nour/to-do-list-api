@@ -15,7 +15,10 @@ export const getTasksById = async (req, res) => {
 }
 
 export const createTask = async (req, res) => {
-    const body = { "id": "sayas", "title": "Learn Express", "completed": false };
-    const task = await taskService.createTask(body);
+    const task = await taskService.createTask(req.body);
     res.status(201).json(task);
+}
+
+export const updateTask= async (req,res)=>{
+    
 }
