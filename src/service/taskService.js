@@ -21,9 +21,21 @@ export const getTasksById = async (id) => {
 
 export const createTask = async (body) => {
     const tasks = await getAllTasks();
+    const now = new Date().toISOString;
     const newTAsk = {
         id: randomUUID(),
         title: body.title,
+        description: body.description || " ",
+        priority:body.priority|| "medium",
+        dueDate:body.dueDate|| null,
+        remindAt: body.remindAt || null,
+        repeat: body.repeat || "none",
+        subtasks: body.subtasks ||[],
+        reminderSent: body.reminderSent || false,
+        createdAt: now,
+        updatedAt: now,
+        completedAt:null,
+        deletedAt:null,
         completed: false
     };
 
