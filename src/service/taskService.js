@@ -3,12 +3,25 @@ import { randomUUID } from 'node:crypto';
 
 const filePath = new URL('../../data/tasks.json', import.meta.url);
 
-export const getAllTasks = async () => {
+export const getAllTasks = async (query) => {
+    const priority = query.priority;
+    const status = query.status;
+    const dueDate = query.dueDate;
+    const completed = query.completed;
+    const text = query.text;
+
     const data = await readFile(
         filePath, 'utf-8'
     );
-    const tasks = JSON.parse(data);
-    return tasks.filter(task => task.deletedAt === null);
+    let tasks = JSON.parse(data).filter(task => task.deletedAt === null);
+
+    priority && (tasks = tasks.filter(task => task.priority === priority));
+    status && (tasks = tasks.filter(task => task.status === status));
+    dueDate && (tasks = tasks.filter(task => task.dueDate === dueDate));
+    completed && (tasks = tasks.filter(task => task.completed === completed));
+    text && (tasks = tasks.filter(task => task.title.includes(text) || task.description.includes(text)));
+    
+    return tasks;
 };
 
 export const getTasksById = async (id) => {
