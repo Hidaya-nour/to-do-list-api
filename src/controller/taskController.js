@@ -19,6 +19,8 @@ export const createTask = async (req, res) => {
     res.status(201).json(task);
 }
 
-export const updateTask= async (req,res)=>{
-    
+export const updateTask = async (req, res) => {
+    const id = req.params.id;
+    const task = await taskService.updateTask(id, req.body)
+    res.status(200).json(task);
 }
