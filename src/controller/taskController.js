@@ -34,7 +34,7 @@ export const patchTask = async (req, res) => {
 export const deleteTask = async (req, res) => {
     const id = req.params.id;
     const task = await taskService.deleteTask(id);
-    res.status(204);
+    res.status(204).json(task);
 }
 
 export const deleteCompletedTasks = async (req, res) => {

@@ -11,20 +11,21 @@ const readTasks = async () => {
     const data = await readFile(
         filePath, 'utf-8'
     );
+    return JSON.parse(data);
 }
 export const getAllTasks = async (query) => {
     const priority = query?.priority;
     const dueDate = query?.dueDate;
     const completed = query?.completed === "true";
     const search = query?.search?.trim().toLowerCase();
-    const tasks = await readTasks()
+    const tasks = await readTasks();
 
-    let filteredTasks = JSON.parse(data).filter(task => task.deletedAt === null);
+    let filteredTasks = tasks.filter(task => task.deletedAt === null);
 
-    priority && (filteredTasks = tasks.filter(task => task.priority === priority));
-    dueDate && (filteredTasks = tasks.filter(task => task.dueDate === dueDate));
-    completed && (filteredTasks = tasks.filter(task => task.completed == completed));
-    search && (filteredTasks = tasks.filter(task => task.title.toLowerCase().includes(search) || task.description.toLowerCase().includes(search)));
+    priority && (filteredTasks = filteredTasks.filter(task => task.priority === priority));
+    dueDate && (filteredTasks = filteredTasks.filter(task => task.dueDate === dueDate));
+    completed && (filteredTasks = filteredTasks.filter(task => task.completed == completed));
+    search && (filteredTasks = filteredTasks.filter(task => task.title.toLowerCase().includes(search) || task.description.toLowerCase().includes(search)));
 
     const sort = query?.sort;
     const order = query?.order || "asc";
@@ -60,9 +61,10 @@ export const getAllTasks = async (query) => {
 
 export const getTasksById = async (id) => {
 
-    const data = await readTasks();
+    const tasks = await readTasks();
 
-    return data.find(task => task.id === id);
+    const task = tasks.find(task => task.id === id);
+    return task;
 }
 
 export const createTask = async (body) => {
