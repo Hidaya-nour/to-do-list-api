@@ -42,3 +42,44 @@ export const deleteCompletedTasks = async (req, res) => {
     res.status(204).json(tasks);
 
 }
+
+export const getDeletedTasks = async (req, res) => {
+    const tasks = await taskService.getDeletedTasks();
+    res.status(200).json(tasks)
+}
+export const restoreTask = async (req, res) => {
+    const task = await taskService.restoreTask(req.params.id)
+    res.status(200).json(task);
+}
+9
+export const permanentlyDeleteTask = async (req, res) => {
+    const id = req.params.id;
+    const tasks = await taskService.permanentlyDeleteTask(id);
+    res.status(204).json(tasks);
+}
+
+export const getSubTasks = async (req, res) => {
+    const id = req.params.id;
+    const subTasks = await taskService.getSubTasks(id);
+    res.status(200).json(subTasks);
+}
+
+export const addSubTasks = async (req, res) => {
+    const id = req.params.id;
+    const body = req.body;
+    const subTasks = await taskService.addSubTasks(id, body);
+    res.status(201).json(subTasks);
+}
+
+export const updateSubTasks = async (req, res) => {
+    const { id, subtaskId } = req.params;
+    const body = req.body;
+    const subTask = await taskService.updateSubTask(id, subtaskId, body);
+    res.status(201).json(subTask);
+}
+
+export const deleteSubTask = async (req, res) => {
+    const { id, subtaskId } = req.params;
+    const subTask = await taskService.deleteSubTask(id, subtaskId);
+    res.status(202).json(subTask);
+}

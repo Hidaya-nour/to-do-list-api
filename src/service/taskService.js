@@ -164,3 +164,96 @@ export const deleteCompletedTasks = async () => {
     await saveTasks(tasks);
     return tasks;
 }
+
+export const getDeletedTasks = async () => {
+    const tasks = await readTasks()
+    const filteredTasks = tasks.filter(task => task.deletedAt);
+    return filteredTasks;
+
+}
+
+export const restoreTask = async (id) => {
+    const tasks = await readTasks();
+    const task = tasks.find(task => task.id === id);
+    if (!task) {
+        return "task not found";
+    }
+    task.deletedAt = null;
+    await saveTasks(tasks);
+    return task;
+
+}
+
+export const permanentlyDeleteTask = async (id) => {
+    const tasks = await readTasks();
+    const task = tasks.find(task => task.id === id);
+    if (!task) {
+        return "Task not found";
+    }
+
+    if (!task.deletedAt) {
+        return "Task is not in the trash";
+    }
+    const updatedTasks = tasks.filter(task => task.id !== id);
+    await saveTasks(updatedTasks);
+    return updatedTasks;
+}
+
+export const getSubTasks = async (id) => {
+    const tasks = await readTasks();
+    const task = tasks.find(task => task.id === id);
+    if (!task) return "task not found"
+    return task.subtasks || [];
+}
+export const addSubTasks = async (id, body) => {
+    const tasks = await getAllTasks();
+    console.log(tasks);
+    const task = tasks.find(task => task.id === id);
+    if (!task) return "trask not found";
+
+
+    if (!Array.isArray(body.subtasks) || body.subtasks.length === 0) {
+        return "Subtasks must be a non-empty array";
+    }
+
+    if (body.subtasks.some(subtask => !subtask.title?.trim())) {
+        return "Every subtask must have a title";
+    }
+
+    const newSubtasks = body.subtasks.map(subtask => ({
+        id: randomUUID(),
+        title: subtask.title.trim(),
+        completed: false,
+        createdAt: new Date().toISOString()
+    }));
+
+    task.subtasks ??= [];
+    task.subtasks.push(...newSubtasks);
+    await saveTasks(tasks);
+
+    return newSubtasks;
+}
+
+export const updateSubTask = async (id, subtaskid, body) => {
+    const tasks = await getAllTasks();
+    const task = tasks.find(task => task.id === id);
+    const subtask = task.subtasks.find(subtask => subtask.id === subtaskid)
+    if (!task) return "task not found";
+    if (!subtask) return "subtask not found";
+
+    if (body.title) subtask.title = body.title.trim;
+    if (body.completed) subtask.completed = body.completed || false;
+
+    await saveTasks(tasks);
+    return subtask;
+
+}
+export const deleteSubTask = async (id, subtaskId) => {
+    const tasks = await getAllTasks();
+    const task = tasks.find(task => task.id === id);
+    if (!task) return "task not found";
+
+    task.subtasks = task.subtasks.filter(subtask => subtask.id !== subtaskId);
+    await saveTasks(tasks);
+    return task.subtasks;
+}
