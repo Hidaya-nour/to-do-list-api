@@ -15,47 +15,40 @@ export const getTasksById = async (req, res) => {
 }
 
 export const createTask = async (req, res) => {
-    const task = await taskService.createTask(req.body);
-    res.status(201).json(task);
+    const task = await taskService.createTask(req.validated.body);
+    res.status(201).location(`/api/tasks/${task.id}`).json(task);
 }
 
 export const updateTask = async (req, res) => {
-    const id = req.params.id;
-    const task = await taskService.updateTask(id, req.body)
+    const id = req.validated.params.id;
+    const task = await taskService.updateTask(id, req.validated.body)
     res.status(200).json(task);
 }
 
 export const patchTask = async (req, res) => {
-    const id = req.params.id;
-    const task = await taskService.patchTask(id, req.body);
+    const id = req.validated.params.id;
+    const task = await taskService.patchTask(id, req.validated.body);
     res.status(200).json(task);
 }
 
 export const deleteTask = async (req, res) => {
-    const id = req.params.id;
-    const task = await taskService.deleteTask(id);
-    res.status(204).json(task);
-}
+    const { params, query } = req.validated;
+
+    if (query.permanent) await taskService.permanentlyDeleteTask(params.id);
+    else await taskService.deleteTask(params.id);
+
+    res.status(204).end();
+};
 
 export const deleteCompletedTasks = async (req, res) => {
-    const tasks = await taskService.deleteCompletedTasks();
-    res.status(204).json(tasks);
+    const deleteCount = await taskService.deleteCompletedTasks();
+    res.status(200).json({ deleteCount });
 
 }
 
-export const getDeletedTasks = async (req, res) => {
-    const tasks = await taskService.getDeletedTasks();
-    res.status(200).json(tasks)
-}
 export const restoreTask = async (req, res) => {
-    const task = await taskService.restoreTask(req.params.id)
+    const task = await taskService.restoreTask(req.validated.params.id)
     res.status(200).json(task);
-}
-9
-export const permanentlyDeleteTask = async (req, res) => {
-    const id = req.params.id;
-    const tasks = await taskService.permanentlyDeleteTask(id);
-    res.status(204).json(tasks);
 }
 
 export const getSubTasks = async (req, res) => {

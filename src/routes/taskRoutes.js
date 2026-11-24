@@ -12,26 +12,23 @@ import {
     patchTask,
     deleteTask,
     deleteCompletedTasks,
-    getDeletedTasks,
     restoreTask,
-    permanentlyDeleteTask
 } from "../controller/taskController.js";
-import { listTasksQuerySchema } from '../validators/taskSchemas.js';
+import { deleteCompletedQuerySchema, deleteTaskQuerySchema, listTasksQuerySchema, taskIdParamsSchema, createTaskSchema, updateTaskSchema, patchTaskSchema } from '../validators/taskSchemas.js';
 
 const router = express.Router();
 
 router.get("/", validate(listTasksQuerySchema, 'query'), getTasks);
-router.get("/deleted", getDeletedTasks);
-router.get("/:id", getTasksById);
+router.get("/:id", validate(taskIdParamsSchema, 'params'), getTasksById);
 
-router.post("/", createTask);
-router.put("/:id", updateTask);
-router.patch("/:id", patchTask);
+router.post("/", validate(createTaskSchema), createTask);
+router.put("/:id", validate(taskIdParamsSchema, 'params'), validate(updateTaskSchema), updateTask);
+router.patch("/:id", validate(taskIdParamsSchema, 'params'), validate(patchTaskSchema), patchTask);
 
-router.delete("/completed", deleteCompletedTasks);
-router.delete("/:id", deleteTask);
-router.patch("/restore/:id", restoreTask);
-router.delete("/trash/:id", permanentlyDeleteTask);
+router.delete('/', validate(deleteCompletedQuerySchema, 'query'), deleteCompletedTasks);
+router.delete('/:id', validate(taskIdParamsSchema, 'params'),
+    validate(deleteTaskQuerySchema, 'query'), deleteTask);
+router.post('/:id/restore', validate(taskIdParamsSchema, 'params'), restoreTask);
 
 router.post("/subtasks/:id", addSubTasks);
 router.get("/subtasks/:id", getSubTasks);

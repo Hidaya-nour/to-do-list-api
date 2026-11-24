@@ -14,14 +14,14 @@ const toDetails = (issues, source) =>
 
 
 export const validate = (schema, source = 'body') => (req, res, next) => {
-    const result = schema.safeParse(req[source]);
+    const result = schema.safeParse(req[source] ?? {});
 
     if (!result.success) {
-        const isQuery = source === 'query';
+        const isBody = source === 'body';
         return next(
             new AppError(
-                isQuery ? 'Invalid query parameters' : 'Validation failed',
-                isQuery ? 400 : 422,
+                isBody ? 'validation failed' : `Invalid ${source === 'query' ? 'Invalid query parameters' : 'URL parameters '}`,
+                isBody ? 422 : 400,
                 toDetails(result.error.issues, source)
             )
         );
