@@ -1,4 +1,4 @@
-import { AppError } from '../errors/AppError.js';
+import AppError from '../errors/AppError.js';
 
 // turns zod issues into [{ field, message }]
 const toDetails = (issues, source) =>
@@ -20,8 +20,8 @@ export const validate = (schema, source = 'body') => (req, res, next) => {
         const isQuery = source === 'query';
         return next(
             new AppError(
-                isQuery ? 400 : 422,
                 isQuery ? 'Invalid query parameters' : 'Validation failed',
+                isQuery ? 400 : 422,
                 toDetails(result.error.issues, source)
             )
         );

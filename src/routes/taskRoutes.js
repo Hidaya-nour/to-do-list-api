@@ -1,5 +1,5 @@
 import express from 'express';
-
+import { validate } from '../middleware/validate.js';
 import {
     deleteSubTask,
     updateSubTasks,
@@ -16,27 +16,26 @@ import {
     restoreTask,
     permanentlyDeleteTask
 } from "../controller/taskController.js";
-
-import asyncHandler from "../middleware/asyncHandler.js";
+import { listTasksQuerySchema } from '../validators/taskSchemas.js';
 
 const router = express.Router();
 
-router.get("/", asyncHandler(getTasks));
-router.get("/deleted", asyncHandler(getDeletedTasks));
-router.get("/:id", asyncHandler(getTasksById));
+router.get("/", validate(listTasksQuerySchema, 'query'), getTasks);
+router.get("/deleted", getDeletedTasks);
+router.get("/:id", getTasksById);
 
-router.post("/", asyncHandler(createTask));
-router.put("/:id", asyncHandler(updateTask));
-router.patch("/:id", asyncHandler(patchTask));
+router.post("/", createTask);
+router.put("/:id", updateTask);
+router.patch("/:id", patchTask);
 
-router.delete("/completed", asyncHandler(deleteCompletedTasks));
-router.delete("/:id", asyncHandler(deleteTask));
-router.patch("/restore/:id", asyncHandler(restoreTask));
-router.delete("/trash/:id", asyncHandler(permanentlyDeleteTask));
+router.delete("/completed", deleteCompletedTasks);
+router.delete("/:id", deleteTask);
+router.patch("/restore/:id", restoreTask);
+router.delete("/trash/:id", permanentlyDeleteTask);
 
-router.post("/subtasks/:id", asyncHandler(addSubTasks));
-router.get("/subtasks/:id", asyncHandler(getSubTasks));
-router.put("/subtasks/:id/:subtaskId", asyncHandler(updateSubTasks));
-router.delete("/:id/subtasks/:subtaskId", asyncHandler(deleteSubTask));
+router.post("/subtasks/:id", addSubTasks);
+router.get("/subtasks/:id", getSubTasks);
+router.put("/subtasks/:id/:subtaskId", updateSubTasks);
+router.delete("/:id/subtasks/:subtaskId", deleteSubTask);
 
 export default router;  

@@ -1,7 +1,7 @@
 import * as taskService from '../service/taskService.js';
 
 export const getTasks = async (req, res) => {
-    const tasks = await taskService.getAllTasks(req.query);
+    const tasks = await taskService.getAllTasks(req.validated.query);
 
     res.status(200).json(tasks);
 };

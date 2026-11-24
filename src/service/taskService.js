@@ -13,34 +13,27 @@ const readTasks = async () => {
     );
     return JSON.parse(data);
 }
-export const getAllTasks = async (query) => {
-    const priority = query?.priority;
-    const dueDate = query?.dueDate;
-    const completed = query?.completed === "true";
-    const search = query?.search?.trim().toLowerCase();
+export const getAllTasks = async (query = {}) => {
+    const { priority, dueDate, completed, search, sort, order = 'asc' } = query;
     const tasks = await readTasks();
 
     let filteredTasks = tasks.filter(task => task.deletedAt === null);
 
-    priority && (filteredTasks = filteredTasks.filter(task => task.priority === priority));
-    dueDate && (filteredTasks = filteredTasks.filter(task => task.dueDate === dueDate));
-    completed && (filteredTasks = filteredTasks.filter(task => task.completed == completed));
-    search && (filteredTasks = filteredTasks.filter(task => task.title.toLowerCase().includes(search) || task.description.toLowerCase().includes(search)));
-
-    const sort = query?.sort;
-    const order = query?.order || "asc";
-    const allawedSortFiedls = ["dueDate", "priority", "createdAt", "title"]; const allawedOrders = ["asc", "desc"];
-
-    if (sort && !allawedSortFiedls.includes(sort) || order && !allawedOrders.includes(order)) {
-        return "Invalid sort filed"
-
+    if (priority) (filteredTasks = filteredTasks.filter(task => task.priority === priority));
+    if (dueDate) (filteredTasks = filteredTasks.filter(task => task.dueDate === dueDate));
+    if (completed !== undefined) (filteredTasks = filteredTasks.filter(task => task.completed == completed));
+    if (search) {
+        const text = search.toLowerCase();
+        filteredTasks = filteredTasks.filter(task =>
+            task.title.toLowerCase().includes(text)
+            || task.description.toLowerCase().includes(text));
     }
 
     if (sort) {
         filteredTasks.sort((a, b) => {
             let comparison;
             if (sort === "title")
-                comparison = a.title.localCompare(b.title);
+                comparison = a.title.localeCompare(b.title);
             else if (sort === "priority") {
                 const priorityValues = {
                     low: 1,

@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 const priorities = ['low', 'medium', 'high'];
 const sortFields = ['dueDate', 'priority', ' createdAt', 'title'];
-const orders = ['asc', ' desc'];
+const orders = ['asc', 'desc'];
 
 const oneOf = (values) => { message: `must be one of ${values.join(',')}` };
 
@@ -18,14 +18,14 @@ export const dateString = z
 
 const booleanString = z
     .enum(['true', 'false'], { message: "must be true or false" })
-    .transform((value)=> value === "true");
+    .transform((value) => value === "true");
 
 export const listTasksQuerySchema = z.object({
     priority: z.enum(priorities, oneOf(priorities)).optional(),
     completed: booleanString.optional(),
     dueDAte: dateString.optional(),
     search: z.string().trim().min(1, "must not be empty").optional(),
-    sort: z.enum(sortFields, oneOF(sortFields)).optional(),
+    sort: z.enum(sortFields, oneOf(sortFields)).optional(),
     order: z.enum(orders, oneOf(orders)).optional(),
 })
     .strict();
