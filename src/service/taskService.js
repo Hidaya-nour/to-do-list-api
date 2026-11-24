@@ -21,6 +21,12 @@ const findActiveTask = (tasks, id) => {
     return task;
 };
 
+const findSubtask = (task, subtaskId) => {
+    const subtask = task.subtasks.find(s => s.id === subtaskId);
+    if (!subtask) throw new AppError(404, 'Subtask not found');
+    return subtask;
+};
+
 const assertTitleAvailable = (tasks, title, ignoreId) => {
     const taken = tasks.some(t => t.id !== ignoreId && t.deletedAt === null &&
         !t.completed && t.title.toLowerCase() === title.toLowerCase());
@@ -186,60 +192,41 @@ export const permanentlyDeleteTask = async (id) => {
 }
 
 export const getSubTasks = async (id) => {
+    const task = findActiveTask(await readTasks(), id);
+    return task.subtasks;
+};
+
+export const addSubTask = async (id, body) => {
     const tasks = await readTasks();
-    const task = tasks.find(task => task.id === id);
-    if (!task) return "task not found"
-    return task.subtasks || [];
-}
-export const addSubTasks = async (id, body) => {
-    const tasks = await getAllTasks();
-    console.log(tasks);
-    const task = tasks.find(task => task.id === id);
-    if (!task) return "trask not found";
+    const task = findActiveTask(tasks, id);
 
-
-    if (!Array.isArray(body.subtasks) || body.subtasks.length === 0) {
-        return "Subtasks must be a non-empty array";
-    }
-
-    if (body.subtasks.some(subtask => !subtask.title?.trim())) {
-        return "Every subtask must have a title";
-    }
-
-    const newSubtasks = body.subtasks.map(subtask => ({
-        id: randomUUID(),
-        title: subtask.title.trim(),
-        completed: false,
-        createdAt: new Date().toISOString()
-    }));
-
-    task.subtasks ??= [];
-    task.subtasks.push(...newSubtasks);
-    await saveTasks(tasks);
-
-    return newSubtasks;
-}
-
-export const updateSubTask = async (id, subtaskid, body) => {
-    const tasks = await getAllTasks();
-    const task = tasks.find(task => task.id === id);
-    const subtask = task.subtasks.find(subtask => subtask.id === subtaskid)
-    if (!task) return "task not found";
-    if (!subtask) return "subtask not found";
-
-    if (body.title) subtask.title = body.title.trim;
-    if (body.completed) subtask.completed = body.completed || false;
+    const subtask = { id: randomUUID(), title: body.title, completed: false };
+    task.subtasks.push(subtask);
+    task.updatedAt = new Date().toISOString();
 
     await saveTasks(tasks);
     return subtask;
+};
 
-}
-export const deleteSubTask = async (id, subtaskId) => {
-    const tasks = await getAllTasks();
-    const task = tasks.find(task => task.id === id);
-    if (!task) return "task not found";
+export const updateSubTask = async (id, subtaskId, changes) => {
+    const tasks = await readTasks();
+    const task = findActiveTask(tasks, id);
+    const subtask = findSubtask(task, subtaskId);
 
-    task.subtasks = task.subtasks.filter(subtask => subtask.id !== subtaskId);
+    Object.assign(subtask, changes);   // safe: the schema only allows title and completed
+    task.updatedAt = new Date().toISOString();
+
     await saveTasks(tasks);
-    return task.subtasks;
-}
+    return subtask;
+};
+
+export const deleteSubTask = async (id, subtaskId) => {
+    const tasks = await readTasks();
+    const task = findActiveTask(tasks, id);
+    findSubtask(task, subtaskId);      // throws 404 if it does not exist
+
+    task.subtasks = task.subtasks.filter(s => s.id !== subtaskId);
+    task.updatedAt = new Date().toISOString();
+
+    await saveTasks(tasks);
+};

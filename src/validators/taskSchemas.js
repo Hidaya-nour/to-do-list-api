@@ -80,3 +80,19 @@ export const deleteTaskQuerySchema = z
         permanent: booleanString.optional(),
     })
     .strict();
+
+export const subtaskParamsSchema = z.object({
+    id: z.string().uuid('Must be a valid task ID (UUID)'),
+    subtaskId: z.string().uuid('Must be a valid subtask ID (UUID)'),
+});
+
+
+export const createSubtaskSchema = z.object({ title: fields.title }).strict();
+
+export const patchSubtaskSchema = z
+    .object({ title: fields.title, completed: fields.completed })
+    .strict()
+    .partial()
+    .refine((data) => Object.keys(data).length > 0, {
+        message: 'Provide at least one field to update',
+    });

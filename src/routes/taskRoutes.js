@@ -1,38 +1,62 @@
-import express from 'express';
+import { Router } from 'express';
+
+import * as ctrl from '../controller/taskController.js'; // adjust the path/name to your controller
 import { validate } from '../middleware/validate.js';
+import { asyncHandler } from '../middleware/asyncHandler.js';
 import {
-    deleteSubTask,
-    updateSubTasks,
-    addSubTasks,
-    getSubTasks,
-    getTasks,
-    getTasksById,
-    createTask,
-    updateTask,
-    patchTask,
-    deleteTask,
-    deleteCompletedTasks,
-    restoreTask,
-} from "../controller/taskController.js";
-import { deleteCompletedQuerySchema, deleteTaskQuerySchema, listTasksQuerySchema, taskIdParamsSchema, createTaskSchema, updateTaskSchema, patchTaskSchema } from '../validators/taskSchemas.js';
+    listTasksQuerySchema,
+    taskIdParamsSchema,
+    createTaskSchema,
+    updateTaskSchema,
+    patchTaskSchema,
+    deleteTaskQuerySchema,
+    deleteCompletedQuerySchema,
+    subtaskParamsSchema,
+    createSubtaskSchema,
+    patchSubtaskSchema,
+} from '../validators/taskSchemas.js';
 
-const router = express.Router();
+const router = Router();
 
-router.get("/", validate(listTasksQuerySchema, 'query'), getTasks);
-router.get("/:id", validate(taskIdParamsSchema, 'params'), getTasksById);
+router.get('/', validate(listTasksQuerySchema, 'query'), asyncHandler(ctrl.getTasks));
+router.post('/', validate(createTaskSchema), asyncHandler(ctrl.createTask));
+router.delete('/', validate(deleteCompletedQuerySchema, 'query'), asyncHandler(ctrl.deleteCompletedTasks));
 
-router.post("/", validate(createTaskSchema), createTask);
-router.put("/:id", validate(taskIdParamsSchema, 'params'), validate(updateTaskSchema), updateTask);
-router.patch("/:id", validate(taskIdParamsSchema, 'params'), validate(patchTaskSchema), patchTask);
 
-router.delete('/', validate(deleteCompletedQuerySchema, 'query'), deleteCompletedTasks);
-router.delete('/:id', validate(taskIdParamsSchema, 'params'),
-    validate(deleteTaskQuerySchema, 'query'), deleteTask);
-router.post('/:id/restore', validate(taskIdParamsSchema, 'params'), restoreTask);
+router.get('/:id', validate(taskIdParamsSchema, 'params'), asyncHandler(ctrl.getTasksById));
 
-router.post("/subtasks/:id", addSubTasks);
-router.get("/subtasks/:id", getSubTasks);
-router.put("/subtasks/:id/:subtaskId", updateSubTasks);
-router.delete("/:id/subtasks/:subtaskId", deleteSubTask);
+router.put('/:id',
+    validate(taskIdParamsSchema, 'params'),
+    validate(updateTaskSchema),
+    asyncHandler(ctrl.updateTask));
 
-export default router;  
+router.patch('/:id',
+    validate(taskIdParamsSchema, 'params'),
+    validate(patchTaskSchema),
+    asyncHandler(ctrl.patchTask));
+
+
+router.delete('/:id',
+    validate(taskIdParamsSchema, 'params'),
+    validate(deleteTaskQuerySchema, 'query'),
+    asyncHandler(ctrl.deleteTask));
+
+router.post('/:id/restore', validate(taskIdParamsSchema, 'params'), asyncHandler(ctrl.restoreTask));
+
+router.get('/:id/subtasks', validate(taskIdParamsSchema, 'params'), asyncHandler(ctrl.getSubTasks));
+
+router.post('/:id/subtasks',
+    validate(taskIdParamsSchema, 'params'),
+    validate(createSubtaskSchema),
+    asyncHandler(ctrl.addSubTask));
+
+router.patch('/:id/subtasks/:subtaskId',
+    validate(subtaskParamsSchema, 'params'),
+    validate(patchSubtaskSchema),
+    asyncHandler(ctrl.updateSubTask));
+
+router.delete('/:id/subtasks/:subtaskId',
+    validate(subtaskParamsSchema, 'params'),
+    asyncHandler(ctrl.deleteSubTask));
+
+export default router;
