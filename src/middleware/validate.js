@@ -20,7 +20,7 @@ export const validate = (schema, source = 'body') => (req, res, next) => {
         const isBody = source === 'body';
         return next(
             new AppError(
-                isBody ? 'validation failed' : `Invalid ${source === 'query' ? 'Invalid query parameters' : 'URL parameters '}`,
+                isBody ? 'Validation failed' : source === 'query' ? 'Invalid query parameters' : 'Invalid URL parameters',
                 isBody ? 422 : 400,
                 toDetails(result.error.issues, source)
             )

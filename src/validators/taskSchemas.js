@@ -1,10 +1,9 @@
 import { z } from 'zod';
 
 const priorities = ['low', 'medium', 'high'];
-const sortFields = ['dueDate', 'priority', ' createdAt', 'title'];
+const sortFields = ['dueDate', 'priority', 'createdAt', 'title'];
 const orders = ['asc', 'desc'];
 const repeats = ['none', 'daily', 'weekly', 'monthly'];
-const deleted = [true, false];
 const oneOf = (values) => { message: `must be one of ${values.join(',')}` };
 
 const isRealDate = (value) => {
@@ -23,7 +22,8 @@ const booleanString = z
 export const listTasksQuerySchema = z.object({
     priority: z.enum(priorities, oneOf(priorities)).optional(),
     completed: booleanString.optional(),
-    dueDAte: dateString.optional(),
+    due: z.enum(['today', 'week'], { message: 'must be today or week' }).optional(),
+    overdue: z.literal('true', { message: 'must be true' }).optional(),
     search: z.string().trim().min(1, "must not be empty").optional(),
     sort: z.enum(sortFields, oneOf(sortFields)).optional(),
     order: z.enum(orders, oneOf(orders)).optional(),
@@ -57,7 +57,7 @@ const fields = {
 
 export const createTaskSchema = z.object({
     title: fields.title,
-    description: fields.description.default(' '),
+    description: fields.description.default(''),
     priority: fields.priority.default('medium'),
     dueDate: fields.dueDate.default(null),
     remindAt: fields.remindAt.default(null),

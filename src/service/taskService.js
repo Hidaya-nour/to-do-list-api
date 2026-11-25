@@ -1,11 +1,19 @@
-import { readFile, writeFile } from 'node:fs/promises';
+import { readFile, writeFile, rename } from 'node:fs/promises';
 import { randomUUID } from 'node:crypto';
 import AppError from '../errors/AppError.js';
 
 const filePath = new URL('../../data/tasks.json', import.meta.url);
+let pendingSave = Promise.resolve();
 
 const saveTasks = async (tasks) => {
-    await writeFile(filePath, JSON.stringify(tasks, null, 2));
+    const contents = JSON.stringify(tasks, null, 2);
+    const save = pendingSave.then(async () => {
+        const temporaryPath = new URL(`../../data/tasks.${randomUUID()}.tmp`, import.meta.url);
+        await writeFile(temporaryPath, contents);
+        await rename(temporaryPath, filePath);
+    });
+    pendingSave = save.catch(() => {});
+    await save;
 };
 
 const readTasks = async () => {
@@ -83,14 +91,21 @@ const PRIORITY_RANK = { high: 3, medium: 2, low: 1 };
 
 
 export const getAllTasks = async (query = {}) => {
-    const { priority, dueDate, completed, search, sort, order = 'asc', deleted = false } = query;
+    const { priority, due, overdue, completed, search, sort = 'createdAt', order = 'asc', deleted = false } = query;
     const tasks = await readTasks();
 
     let filteredTasks = tasks.filter(task => deleted ? task.deletedAt !== null : task.deletedAt === null);
 
     if (priority) (filteredTasks = filteredTasks.filter(task => task.priority === priority));
-    if (dueDate) (filteredTasks = filteredTasks.filter(task => task.dueDate === dueDate));
-    if (completed !== undefined) (filteredTasks = filteredTasks.filter(task => task.completed == completed));
+    const todayDate = today();
+    if (due === 'today') filteredTasks = filteredTasks.filter(task => task.dueDate === todayDate);
+    if (due === 'week') {
+        const endOfWeek = formatDate(new Date(parseDate(todayDate).getTime() + 6 * 86400000));
+        filteredTasks = filteredTasks.filter(task => task.dueDate >= todayDate && task.dueDate <= endOfWeek);
+    }
+    if (overdue === 'true') filteredTasks = filteredTasks.filter(task =>
+        !task.completed && task.dueDate && task.dueDate < todayDate);
+    if (completed !== undefined) filteredTasks = filteredTasks.filter(task => task.completed === completed);
     if (search) {
         const text = search.toLowerCase();
         filteredTasks = filteredTasks.filter(task =>
@@ -98,8 +113,7 @@ export const getAllTasks = async (query = {}) => {
             || task.description.toLowerCase().includes(text));
     }
 
-    if (sort) {
-        filteredTasks.sort((a, b) => {
+    filteredTasks.sort((a, b) => {
             let comparison;
             if (sort === "title")
                 comparison = a.title.localeCompare(b.title);
@@ -112,12 +126,12 @@ export const getAllTasks = async (query = {}) => {
 
                 comparison = priorityValues[a.priority] - priorityValues[b.priority];
             }
-            else {
-                comparison = new Date(a[sort]) - new Date(b[sort]);
-            }
+            else if (sort === 'dueDate') {
+                if (!a.dueDate || !b.dueDate) return !a.dueDate ? (!b.dueDate ? 0 : 1) : -1;
+                else comparison = a.dueDate.localeCompare(b.dueDate);
+            } else if (sort === 'createdAt') comparison = a.createdAt.localeCompare(b.createdAt);
             return order === "desc" ? -comparison : comparison;
         });
-    };
     return filteredTasks;
 };
 
@@ -139,7 +153,7 @@ export const createTask = async (body) => {
     const newTask = {
         id: randomUUID(),
         title: body.title,
-        description: body.description || " ",
+        description: body.description ?? "",
         priority: body.priority || "medium",
         dueDate: body.dueDate || null,
         remindAt: body.remindAt || null,

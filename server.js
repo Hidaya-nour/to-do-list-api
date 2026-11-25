@@ -4,6 +4,7 @@ import { errorHandler } from './src/middleware/errorHandler.js';
 import { requireJson } from './src/middleware/requireJson.js';
 import systemRoutes from './src/routes/system.js';
 import { start } from './src/jobs/reminderJob.js';
+import AppError from './src/errors/AppError.js';
 const app = express()
 const port = 3000
 
@@ -16,9 +17,20 @@ app.use("/api/tasks", router);
 app.use('/api', systemRoutes);
 
 app.use((req, res, next) => {
-    const error = new Error("Route not found");
-    error.status = 404;
-    next(error);
+    const path = req.path;
+    let allowed;
+    if (path === '/api/tasks') allowed = ['GET', 'POST', 'DELETE'];
+    else if (/^\/api\/tasks\/[^/]+$/.test(path)) allowed = ['GET', 'PUT', 'PATCH', 'DELETE'];
+    else if (/^\/api\/tasks\/[^/]+\/restore$/.test(path)) allowed = ['POST'];
+    else if (/^\/api\/tasks\/[^/]+\/subtasks$/.test(path)) allowed = ['GET', 'POST'];
+    else if (/^\/api\/tasks\/[^/]+\/subtasks\/[^/]+$/.test(path)) allowed = ['PATCH', 'DELETE'];
+    else if (path === '/api/agenda') allowed = ['GET'];
+
+    if (allowed) {
+        res.set('Allow', allowed.join(', '));
+        return next(new AppError('Method not allowed', 405));
+    }
+    next(new AppError('Route not found', 404));
 });
 
 app.use(errorHandler);
