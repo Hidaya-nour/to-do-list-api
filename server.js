@@ -24,7 +24,10 @@ app.use((req, res, next) => {
     else if (/^\/api\/tasks\/[^/]+\/restore$/.test(path)) allowed = ['POST'];
     else if (/^\/api\/tasks\/[^/]+\/subtasks$/.test(path)) allowed = ['GET', 'POST'];
     else if (/^\/api\/tasks\/[^/]+\/subtasks\/[^/]+$/.test(path)) allowed = ['PATCH', 'DELETE'];
+    else if (/^\/api\/tasks\/[^/]+\/snooze$/.test(path)) allowed = ['POST'];
     else if (path === '/api/agenda') allowed = ['GET'];
+    else if (path === '/api/notifications') allowed = ['GET'];
+    else if (/^\/api\/notifications\/[^/]+$/.test(path)) allowed = ['PATCH'];
 
     if (allowed) {
         res.set('Allow', allowed.join(', '));

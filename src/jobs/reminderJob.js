@@ -1,23 +1,19 @@
-import {
-    findDueReminders,
-    markReminderSent
-} from '../service/taskService.js';
+import { processDueReminders } from '../service/taskService.js';
+
+let checking = false;
 
 const checkReminders = async () => {
+    if (checking) return;
+    checking = true;
     try {
-        const due = await findDueReminders();
-
-
+        const due = await processDueReminders();
         for (const task of due) {
             console.log(`[reminder] ${task.title}`);
-
-            await markReminderSent(task.id);
-
-            console.log(`[reminder] ${task.title} marked as sent`);
         }
-
     } catch (err) {
         console.error('[reminder] Reminder check failed:', err.message);
+    } finally {
+        checking = false;
     }
 };
 

@@ -121,6 +121,6 @@ export const notificationIdParamsSchema = z.object({
 
 export const patchNotificationSchema = z
     .object({
-        read: z.boolean({ message: 'Must be true or false' }),
+        read: z.literal(true, { message: 'Must be true' }),
     })
     .strict();

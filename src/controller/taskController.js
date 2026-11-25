@@ -1,4 +1,5 @@
 import * as taskService from '../service/taskService.js';
+import * as notificationService from '../service/notificationService.js';
 
 export const getTasks = async (req, res) => {
     const tasks = await taskService.getAllTasks(req.validated.query);
@@ -85,17 +86,21 @@ export const getAgenda = async (req, res) => {
 
 export const snoozeTask = async (req, res, next) => {
     try {
-        const id = req.params.id;
-        const { minutes = 10 } = req.body;
-
-        const task = await taskService.snoozeReminder(id, minutes);
-
-        res.status(200).json({
-            message: `Reminder snoozed for ${minutes} minutes`,
-            task
-        });
-
+        const { params, body } = req.validated;
+        const task = await taskService.snoozeReminder(params.id, body.minutes);
+        res.status(200).json(task);
     } catch (err) {
         next(err);
     }
+};
+
+export const getNotifications = async (req, res) => {
+    const notifications = await notificationService.listNotifications(req.validated.query);
+    res.status(200).json(notifications);
+};
+
+export const patchNotification = async (req, res) => {
+    const { params, body } = req.validated;
+    const notification = await notificationService.markNotificationRead(params.id, body.read);
+    res.status(200).json(notification);
 };

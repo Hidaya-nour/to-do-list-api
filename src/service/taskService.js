@@ -1,6 +1,7 @@
 import { readFile, writeFile, rename } from 'node:fs/promises';
 import { randomUUID } from 'node:crypto';
 import AppError from '../errors/AppError.js';
+import { countUnreadNotifications, createReminderNotification } from './notificationService.js';
 
 const filePath = new URL('../../data/tasks.json', import.meta.url);
 let pendingSave = Promise.resolve();
@@ -298,7 +299,7 @@ export const deleteSubTask = async (id, subtaskId) => {
 
 export const getAgenda = async () => {
     const todayStr = today();
-    const tasks = await readTasks();
+    const [tasks, unreadNotifications] = await Promise.all([readTasks(), countUnreadNotifications()]);
 
     const open = tasks.filter(t => t.deletedAt === null && !t.completed && t.dueDate);
 
@@ -309,6 +310,7 @@ export const getAgenda = async () => {
         date: todayStr,
         overdue: open.filter(t => t.dueDate < todayStr).sort(byPriorityThenDate),
         dueToday: open.filter(t => t.dueDate === todayStr).sort(byPriorityThenDate),
+        unreadNotifications,
     };
 };
 
@@ -341,7 +343,16 @@ export const markReminderSent = async (id) => {
     return task;
 };
 
-export const snoozeReminder = async (id, minutes = 10) => {
+export const processDueReminders = async () => {
+    const dueTasks = await findDueReminders();
+    for (const task of dueTasks) {
+        await createReminderNotification(task);
+        await markReminderSent(task.id);
+    }
+    return dueTasks;
+};
+
+export const snoozeReminder = async (id, minutes) => {
     const tasks = await readTasks();
 
     const task = findActiveTask(tasks, id);
@@ -354,8 +365,10 @@ export const snoozeReminder = async (id, minutes = 10) => {
         throw new AppError('Task does not have a reminder', 400);
     }
 
-    if (!Number.isInteger(minutes) || minutes <= 0) {
-        throw new AppError('Snooze duration must be a positive integer', 400);
+    if (!Number.isInteger(minutes) || minutes < 1 || minutes > 1440) {
+        throw new AppError('Validation failed', 422, [
+            { field: 'minutes', message: 'Must be a whole number from 1 to 1440' },
+        ]);
     }
 
     const newReminderTime = new Date(

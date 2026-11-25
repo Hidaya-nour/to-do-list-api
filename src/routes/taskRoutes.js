@@ -14,6 +14,7 @@ import {
     subtaskParamsSchema,
     createSubtaskSchema,
     patchSubtaskSchema,
+    snoozeSchema,
 } from '../validators/taskSchemas.js';
 
 const router = Router();
@@ -59,6 +60,9 @@ router.delete('/:id/subtasks/:subtaskId',
     validate(subtaskParamsSchema, 'params'),
     asyncHandler(ctrl.deleteSubTask));
 
-router.patch('/:id/snooze', ctrl.snoozeTask);
+router.post('/:id/snooze',
+    validate(taskIdParamsSchema, 'params'),
+    validate(snoozeSchema),
+    asyncHandler(ctrl.snoozeTask));
 
 export default router;
