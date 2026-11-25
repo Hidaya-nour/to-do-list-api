@@ -59,4 +59,6 @@ router.delete('/:id/subtasks/:subtaskId',
     validate(subtaskParamsSchema, 'params'),
     asyncHandler(ctrl.deleteSubTask));
 
+router.patch('/:id/snooze', ctrl.snoozeTask);
+
 export default router;

@@ -41,6 +41,16 @@ const assertRepeatHasDueDate = (task) => {
 };
 
 
+const today = () => {
+    const d = new Date();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${d.getFullYear()}-${month}-${day}`;
+};
+
+const PRIORITY_RANK = { high: 3, medium: 2, low: 1 };
+
+
 export const getAllTasks = async (query = {}) => {
     const { priority, dueDate, completed, search, sort, order = 'asc', deleted = false } = query;
     const tasks = await readTasks();
@@ -229,4 +239,78 @@ export const deleteSubTask = async (id, subtaskId) => {
     task.updatedAt = new Date().toISOString();
 
     await saveTasks(tasks);
+};
+
+export const getAgenda = async () => {
+    const todayStr = today();
+    const tasks = await readTasks();
+
+    const open = tasks.filter(t => t.deletedAt === null && !t.completed && t.dueDate);
+
+    const byPriorityThenDate = (a, b) =>
+        PRIORITY_RANK[b.priority] - PRIORITY_RANK[a.priority] || a.dueDate.localeCompare(b.dueDate);
+
+    return {
+        date: todayStr,
+        overdue: open.filter(t => t.dueDate < todayStr).sort(byPriorityThenDate),
+        dueToday: open.filter(t => t.dueDate === todayStr).sort(byPriorityThenDate),
+    };
+};
+
+export const findDueReminders = async () => {
+    const now = new Date();
+    const tasks = await readTasks();
+
+    return tasks.filter(t =>
+        t.remindAt &&                    // has a reminder time
+        !t.reminderSent &&               // not already sent
+        !t.completed &&                  // still needs doing
+        t.deletedAt === null &&          // not in the trash
+        new Date(t.remindAt) <= now);    // the time has arrived
+};
+
+export const markReminderSent = async (id) => {
+
+    const tasks = await readTasks();
+
+    const task = tasks.find(t => t.id === id);
+
+    if (!task) {
+        throw new AppError('Task not found', 404);
+    }
+
+    task.reminderSent = true;
+    task.updatedAt = new Date().toISOString();
+
+    await saveTasks(tasks);
+    return task;
+};
+export const snoozeReminder = async (id, minutes = 10) => {
+    const tasks = await readTasks();
+
+    const task = findActiveTask(tasks, id);
+
+    if (task.completed) {
+        throw new AppError('Cannot snooze a completed task', 409);
+    }
+
+    if (task.remindAt === null) {
+        throw new AppError('Task does not have a reminder', 400);
+    }
+
+    if (!Number.isInteger(minutes) || minutes <= 0) {
+        throw new AppError('Snooze duration must be a positive integer', 400);
+    }
+
+    const newReminderTime = new Date(
+        Date.now() + minutes * 60 * 1000
+    ).toISOString();
+
+    task.remindAt = newReminderTime;
+    task.reminderSent = false;
+    task.updatedAt = new Date().toISOString();
+
+    await saveTasks(tasks);
+
+    return task;
 };

@@ -8,11 +8,10 @@ const deleted = [true, false];
 const oneOf = (values) => { message: `must be one of ${values.join(',')}` };
 
 const isRealDate = (value) => {
-    if (! /^\d{ 4 }- \d {2}-\d {2}$ /.test(value)) return false;
-    const date = new Date(`${value} T 00:00:00Z`);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+    const date = new Date(`${value}T00:00:00Z`);
     return !Number.isNaN(date.getTime()) && date.toISOString().startsWith(value);
 };
-
 export const dateString = z
     .string()
     .refine(isRealDate, { message: 'Must be a real date in YYYY-MM-DD format' });
@@ -96,3 +95,32 @@ export const patchSubtaskSchema = z
     .refine((data) => Object.keys(data).length > 0, {
         message: 'Provide at least one field to update',
     });
+
+export const snoozeSchema = z
+    .object({
+        minutes: z
+            .number({ message: 'Must be a whole number of minutes' })
+            .int('Must be a whole number of minutes')
+            .min(1, 'Must be at least 1')
+            .max(1440, 'Must be at most 1440 (24 hours)'),
+    })
+    .strict();
+
+
+export const listNotificationsQuerySchema = z
+    .object({
+        read: booleanString.optional(),
+    })
+    .strict();
+
+
+export const notificationIdParamsSchema = z.object({
+    id: z.string().uuid('Must be a valid notification ID (UUID)'),
+});
+
+
+export const patchNotificationSchema = z
+    .object({
+        read: z.boolean({ message: 'Must be true or false' }),
+    })
+    .strict();

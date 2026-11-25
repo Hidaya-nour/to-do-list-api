@@ -75,3 +75,25 @@ export const deleteSubTask = async (req, res) => {
     await taskService.deleteSubTask(params.id, params.subtaskId);
     res.status(204).end();
 };
+
+export const getAgenda = async (req, res) => {
+    const agenda = await taskService.getAgenda();
+    res.status(200).json(agenda);
+};
+
+export const snoozeTask = async (req, res, next) => {
+    try {
+        const id = req.params.id;
+        const { minutes = 10 } = req.body;
+
+        const task = await taskService.snoozeReminder(id, minutes);
+
+        res.status(200).json({
+            message: `Reminder snoozed for ${minutes} minutes`,
+            task
+        });
+
+    } catch (err) {
+        next(err);
+    }
+};
