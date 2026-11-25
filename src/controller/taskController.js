@@ -20,16 +20,18 @@ export const createTask = async (req, res) => {
 }
 
 export const updateTask = async (req, res) => {
-    const id = req.validated.params.id;
-    const task = await taskService.updateTask(id, req.validated.body)
+    const { params, body } = req.validated;
+    const { task, nextTask } = await taskService.updateTask(params.id, body);
+    if (nextTask) res.set('X-Next-Task-Id', nextTask.id);
     res.status(200).json(task);
-}
+};
 
 export const patchTask = async (req, res) => {
-    const id = req.validated.params.id;
-    const task = await taskService.patchTask(id, req.validated.body);
+    const { params, body } = req.validated;
+    const { task, nextTask } = await taskService.patchTask(params.id, body);
+    if (nextTask) res.set('X-Next-Task-Id', nextTask.id);
     res.status(200).json(task);
-}
+};
 
 export const deleteTask = async (req, res) => {
     const { params, query } = req.validated;

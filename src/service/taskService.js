@@ -23,14 +23,17 @@ const findActiveTask = (tasks, id) => {
 
 const findSubtask = (task, subtaskId) => {
     const subtask = task.subtasks.find(s => s.id === subtaskId);
-    if (!subtask) throw new AppError(404, 'Subtask not found');
+    if (!subtask) throw new AppError('Subtask not found', 404);
     return subtask;
 };
 
+const isTitleTaken = (tasks, title, ignoreId) => tasks.some(t => t.id !== ignoreId && t.deletedAt === null &&
+    !t.completed && t.title.toLowerCase() === title.toLowerCase());
+
 const assertTitleAvailable = (tasks, title, ignoreId) => {
-    const taken = tasks.some(t => t.id !== ignoreId && t.deletedAt === null &&
-        !t.completed && t.title.toLowerCase() === title.toLowerCase());
-    if (taken) throw new AppError('An active task with this title already exists', 409);
+    if (isTitleTaken(tasks, title, ignoreId)) {
+        throw new AppError('An active task with this title already exists', 409);
+    }
 };
 
 const assertRepeatHasDueDate = (task) => {
@@ -48,6 +51,34 @@ const today = () => {
     return `${d.getFullYear()}-${month}-${day}`;
 };
 
+
+const parseDate = (str) => {
+    const [y, m, d] = str.split('-').map(Number);
+    return new Date(Date.UTC(y, m - 1, d));
+};
+const formatDate = (date) => date.toISOString().slice(0, 10);
+
+
+const stepDate = (dateStr, repeat) => {
+    const date = parseDate(dateStr);
+    if (repeat === 'daily') date.setUTCDate(date.getUTCDate() + 1);
+    else if (repeat === 'weekly') date.setUTCDate(date.getUTCDate() + 7);
+    else {
+        const day = date.getUTCDate();
+        date.setUTCDate(1);                                  // avoid overflowing into the next month
+        date.setUTCMonth(date.getUTCMonth() + 1);
+        const lastDay = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth() + 1, 0)).getUTCDate();
+        date.setUTCDate(Math.min(day, lastDay));
+    }
+    return formatDate(date);
+};
+
+const nextDueDate = (dueDate, repeat) => {
+    const todayStr = today();
+    let next = stepDate(dueDate, repeat);
+    while (next < todayStr) next = stepDate(next, repeat);
+    return next;
+};
 const PRIORITY_RANK = { high: 3, medium: 2, low: 1 };
 
 
@@ -134,6 +165,7 @@ const changeTask = async (id, changes) => {
     const task = findActiveTask(tasks, id);
 
     const updated = { ...task, ...changes, updatedAt: new Date().toISOString() };
+    const justCompleted = changes.completed === true && !task.completed;     // NEW
 
     if (changes.completed !== undefined && changes.completed !== task.completed) {
         updated.completedAt = changes.completed ? updated.updatedAt : null;
@@ -146,8 +178,17 @@ const changeTask = async (id, changes) => {
     if (!updated.completed) assertTitleAvailable(tasks, updated.title, id);
 
     tasks[tasks.indexOf(task)] = updated;
+
+    // NEW: completing a recurring task creates the next occurrence
+    // (skipped if an unfinished task with the same title already exists)
+    let nextTask = null;
+    if (justCompleted && updated.repeat !== 'none' && !isTitleTaken(tasks, updated.title)) {
+        nextTask = buildNextOccurrence(updated, updated.updatedAt);
+        tasks.push(nextTask);
+    }
+
     await saveTasks(tasks);
-    return updated;
+    return { task: updated, nextTask };                                      // CHANGED
 };
 export const updateTask = changeTask;
 export const patchTask = changeTask;
@@ -285,6 +326,7 @@ export const markReminderSent = async (id) => {
     await saveTasks(tasks);
     return task;
 };
+
 export const snoozeReminder = async (id, minutes = 10) => {
     const tasks = await readTasks();
 
@@ -314,3 +356,31 @@ export const snoozeReminder = async (id, minutes = 10) => {
 
     return task;
 };
+
+const buildNextOccurrence = (task, now) => {
+    const dueDate = nextDueDate(task.dueDate, task.repeat);
+
+    let remindAt = null;
+    if (task.remindAt) {
+        const days = (parseDate(dueDate) - parseDate(task.dueDate)) / 86400000;   // how far the due date moved
+        remindAt = new Date(new Date(task.remindAt).getTime() + days * 86400000).toISOString();
+    }
+
+    return {
+        id: randomUUID(),
+        title: task.title,
+        description: task.description,
+        completed: false,
+        priority: task.priority,
+        dueDate,
+        remindAt,
+        repeat: task.repeat,
+        subtasks: task.subtasks.map(s => ({ id: randomUUID(), title: s.title, completed: false })),
+        reminderSent: false,
+        createdAt: now,
+        updatedAt: now,
+        completedAt: null,
+        deletedAt: null,
+    };
+};
+
